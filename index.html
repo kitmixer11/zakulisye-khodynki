@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#151910" />
+    <meta
+      name="description"
+      content="Закулисье Ходынки — найди свою квартиру и не впускай того, кто идёт следом."
+    />
+    <title>Закулисье Ходынки</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <canvas id="game" aria-label="Трёхмерные коридоры жилого дома"></canvas>
+    <div id="vignette"></div>
+    <div id="grain"></div>
+    <div id="danger"></div>
+    <main id="menu" class="screen">
+      <div class="menu-art"></div>
+      <div class="menu-shade"></div>
+      <section class="menu-content">
+        <h1><span>Закулисье</span>Ходынки</h1>
+        <div class="title-rule"><i></i></div>
+        <label class="nickname-field" for="nickname"
+          >Твой ник
+          <input
+            id="nickname"
+            type="text"
+            maxlength="20"
+            placeholder="Как тебя запомнит Ходынка?"
+            autocomplete="nickname"
+            spellcheck="false"
+          />
+        </label>
+        <nav aria-label="Главное меню">
+          <button id="start" class="menu-button" disabled>Новая игра</button
+          ><button id="leaderboard-open" class="menu-button">
+            Лучшие побеги</button
+          ><button id="settings-open" class="menu-button">Настройки</button
+          ><button id="help-open" class="menu-button">Управление</button>
+        </nav>
+        <p id="loading" role="status">Загрузка…</p>
+      </section>
+      <span class="menu-version">v0.5 · прототип</span>
+      <button id="menu-sound" class="text-button">♫ Включить музыку</button>
+    </main>
+    <section id="cinematic" hidden aria-label="История Ильи">
+      <p id="story-text" aria-live="polite"></p>
+      <video
+        id="intro-video"
+        src="/assets/video/intro.mp4"
+        preload="metadata"
+        playsinline
+        hidden
+      ></video>
+      <button id="video-play" class="secondary" hidden>
+        Смотреть катсцену
+      </button>
+      <div class="story-actions">
+        <button id="story-skip" class="text-button">
+          Пропустить вступление</button
+        ><button id="story-next" class="text-button">Далее →</button>
+      </div>
+    </section>
+    <section id="hud" hidden>
+      <div id="objective">
+        <span class="key-symbol">⚿</span
+        ><span>Найди свою квартиру <b>47</b></span>
+      </div>
+      <button id="pause-button" aria-label="Пауза">Ⅱ</button>
+      <output id="run-timer" aria-label="Время прохождения">00:00.00</output>
+      <div class="reticle"></div>
+      <div id="interaction" hidden><kbd>E</kbd><span></span></div>
+      <div id="hide-info" hidden>
+        <span id="hide-state">Ты в укрытии</span>
+        <div>
+          <button id="peek-button">
+            <kbd>Q</kbd> <span>Смотреть в глазок</span></button
+          ><button id="leave-button"><kbd>E</kbd> Выйти</button>
+        </div>
+      </div>
+      <div id="stamina">
+        <span>ДЫХАНИЕ</span>
+        <div class="stamina-track"><div id="stamina-bar"></div></div>
+      </div>
+      <div id="subtitle" role="status" aria-live="polite"></div>
+      <div id="tutorial">
+        <kbd>WASD</kbd> идти <i>·</i> <kbd>E</kbd> дверь <i>·</i>
+        <kbd>SHIFT</kbd> бежать <i>·</i> <kbd>F</kbd> фонарь
+      </div>
+      <div id="touch-controls">
+        <div class="touch-pad">
+          <button data-key="KeyW">↑</button>
+          <div>
+            <button data-key="KeyA">←</button><button data-key="KeyS">↓</button
+            ><button data-key="KeyD">→</button>
+          </div>
+        </div>
+        <div class="touch-actions">
+          <button data-key="ShiftLeft">БЕГ</button
+          ><button id="touch-use">E</button><button id="touch-light">F</button>
+        </div>
+      </div>
+    </section>
+    <div id="scare" hidden><img src="/assets/monster/angry.png" alt="" /></div>
+    <dialog id="settings" class="panel">
+      <button
+        class="close"
+        data-close="settings"
+        aria-label="Закрыть настройки"
+      >
+        ×
+      </button>
+      <h2>Настройки</h2>
+      <label class="setting"
+        >Громкость
+        <span
+          ><output id="volume-value">60%</output
+          ><input id="volume" type="range" min="0" max="100" value="60" /></span
+      ></label>
+      <label class="setting"
+        >Чувствительность
+        <span
+          ><output id="sensitivity-value">1.0</output
+          ><input
+            id="sensitivity"
+            type="range"
+            min="20"
+            max="180"
+            value="80" /></span
+      ></label>
+      <label class="setting"
+        >Зерно плёнки <input id="vhs" type="checkbox" checked
+      /></label>
+      <label class="setting"
+        >Покачивание камеры <input id="bobbing" type="checkbox" checked
+      /></label>
+      <label class="setting"
+        >Без монстра <input id="peaceful" type="checkbox"
+      /></label>
+      <details class="voice-settings">
+        <summary>Голос персонажа</summary>
+        <p>
+          Твои MP3, WAV или OGG прозвучат случайно, каждые 20–35 секунд. В
+          укрытии они уступают место специальной реплике «за дверью».
+        </p>
+        <label class="upload-button" for="voice-files">Добавить реплики</label
+        ><input
+          id="voice-files"
+          type="file"
+          accept="audio/*,.mp3,.wav,.ogg"
+          multiple
+        />
+        <p id="voice-status" role="status">
+          Файлы остаются только в памяти вкладки.
+        </p>
+        <button id="voice-clear" class="text-button" hidden>
+          Удалить реплики
+        </button>
+      </details>
+      <button class="secondary" data-close="settings">Готово</button>
+    </dialog>
+    <dialog id="leaderboard" class="panel leaderboard-panel">
+      <button
+        class="close"
+        data-close="leaderboard"
+        aria-label="Закрыть рейтинг"
+      >
+        ×
+      </button>
+      <span class="eyebrow">ТЕ, КТО ДОБРАЛСЯ ДОМОЙ</span>
+      <h2>Лучшие побеги</h2>
+      <p id="leaderboard-status" role="status"></p>
+      <div class="leaderboard-scroll">
+        <table class="leaderboard-table">
+          <thead>
+            <tr>
+              <th scope="col">Место</th>
+              <th scope="col">Игрок</th>
+              <th scope="col">Время</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-rows"></tbody>
+        </table>
+      </div>
+      <button id="leaderboard-refresh" class="secondary">Обновить</button>
+    </dialog>
+    <dialog id="help" class="panel">
+      <button class="close" data-close="help" aria-label="Закрыть управление">
+        ×
+      </button>
+      <h2>Как добраться домой</h2>
+      <p>
+        Твоя квартира — <b>47</b>. Открывай двери в конце коридоров и ищи её
+        номер.
+      </p>
+      <div class="control-grid">
+        <span><kbd>W A S D</kbd> Движение</span
+        ><span><kbd>Мышь</kbd> Осмотреться</span
+        ><span><kbd>Shift</kbd> Бег</span
+        ><span><kbd>E</kbd> Открыть / спрятаться</span
+        ><span><kbd>Q</kbd> Глазок в укрытии</span
+        ><span><kbd>F</kbd> Фонарик</span><span><kbd>Esc</kbd> Пауза</span>
+      </div>
+      <p>
+        В боковых квартирах можно переждать. Через глазок виден настоящий
+        коридор. Если монстр заметил, куда ты спрятался, он подойдёт к двери. Не
+        выходи, пока не уйдёт. Не все квартиры пустуют: прислушайся перед
+        входом.
+      </p>
+      <p class="hint">
+        Без захвата мыши: зажми левую кнопку для обзора. Стрелки ← → тоже
+        поворачивают камеру. На телефоне — кнопки снизу и обзор пальцем справа.
+      </p>
+      <button class="secondary" data-close="help">Понятно</button>
+    </dialog>
+    <dialog id="pause" class="panel compact">
+      <h2>Пауза</h2>
+      <button id="resume" class="secondary">Продолжить</button
+      ><button id="pause-settings" class="text-button">Настройки</button
+      ><button id="to-menu" class="text-button">Главное меню</button>
+    </dialog>
+    <dialog id="result" class="panel compact">
+      <span id="result-eyebrow" class="eyebrow"></span>
+      <h2 id="result-title"></h2>
+      <p id="result-description"></p>
+      <div id="result-stats"></div>
+      <p id="record-status" role="status"></p>
+      <button id="restart" class="secondary">Попробовать снова</button
+      ><button id="result-menu" class="text-button">Главное меню</button>
+    </dialog>
+    <div id="fatal" hidden role="alert">
+      <h2>Не удалось открыть игру</h2>
+      <p id="fatal-detail"></p>
+      <button onclick="location.reload()">Перезагрузить</button>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
